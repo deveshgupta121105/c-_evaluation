@@ -1,5 +1,5 @@
 import streamlit as st
-from agent import app_graph  # <--- Direct import! No requests.post needed
+from agent import app_graph  # Direct import of the LangGraph
 
 st.set_page_config(page_title="C++ Complexity Analyzer", layout="wide")
 
@@ -32,25 +32,23 @@ if st.button("Calculate Complexity & Score"):
     else:
         with st.spinner("Analyzing code structure and complexity..."):
             try:
-                # --- CHANGED: Run directly instead of calling API ---
+                # 1. Run the Graph
                 initial_state = {"code": code_input, "reviews": []}
                 result = app_graph.invoke(initial_state)
-                # ----------------------------------------------------
                 
                 reviews = result.get("reviews", [])
                 final_report = result.get("final_report", "")
                 
-                # Display Logic
+                # 2. Display Results
                 col1, col2, col3 = st.columns(3)
                 
-                # Safe search for reviews
+                # Helper to safely find specific reviews
                 time_rev = next((r for r in reviews if "Time" in r), "Processing...")
                 space_rev = next((r for r in reviews if "Space" in r), "Processing...")
                 read_rev = next((r for r in reviews if "Readability" in r), "Processing...")
 
                 with col1:
                     st.info("Time Complexity")
-                    # Clean up the text for display
                     st.markdown(time_rev.replace("⏱️ **Time Complexity:**", "").strip())
                 
                 with col2:
@@ -64,6 +62,12 @@ if st.button("Calculate Complexity & Score"):
                 st.divider()
                 st.subheader("🏆 Final Score & Feedback")
                 st.markdown(final_report)
+                
+                # 3. Display Graph Architecture (Your addition)
+                st.divider()
+                st.subheader("⚙️ Agent Architecture")
+                # This generates the image using Mermaid API
+                st.image(app_graph.get_graph().draw_mermaid_png(), caption="Parallel Processing Workflow")
                     
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
